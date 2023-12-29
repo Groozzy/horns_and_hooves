@@ -1,0 +1,40 @@
+version: '3.3'
+
+volumes:
+  static_dir:
+  media_dir:
+  postgres_data:
+
+services:
+  db:
+    image: postgres:13.0-alpine
+    restart: always
+    volumes:
+      - postgres_data:/var/lob/postgresql/data/
+    env_file:
+      - .env
+
+  backend:
+    build: ./backend/
+    restart: always
+    environment:
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - static_dir:/backend_static
+      - media_dir:/var/www/horns_and_hooves/media
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  gateway:
+    build: ./nginx/
+    restart: always
+    env_file: .env
+    ports:
+      - "80:80"
+    volumes:
+      - static_dir:/staticfiles/
+      - media_dir:/var/www/horns_and_hooves/media
+    depends_on:
+      - backend
